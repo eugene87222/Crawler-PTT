@@ -5,8 +5,10 @@ import sqlite3
 import requests
 from pandas import DataFrame
 from bs4 import BeautifulSoup
+import multiprocessing
 from multiprocessing import Pool
 
+cpu = multiprocessing.cpu_count()
 
 ##########################################
 # get the html code with given url       #
@@ -31,7 +33,7 @@ def GetTotalPageNum(BOARD_URL):
     next_page = soup.find('div', 'btn-group-paging').find_all('a', 'btn')
     next_link = next_page[1].get('href')
 
-    total_page = next_link.replace(BOARD_URL + 'index', '')
+    total_page = next_link.lower().replace(BOARD_URL + 'index', '')
     total_page = int(total_page[:-5]) + 1
     
     return total_page
@@ -50,8 +52,8 @@ def GetBoardList(url):
     file = open('board_list.txt', 'w', encoding='utf-8')
 
     for i in content:
-        board_list.append(i.text)
-        file.write(i.text+'\n')
+        board_list.append(i.text.lower())
+        file.write(i.text.lower()+'\n')
 
     file.close()
 
@@ -66,7 +68,7 @@ def ReadBoardList():
 
     board_list = list()
     for line in file:
-        board_list.append(line.strip())
+        board_list.append(line.strip().lower())
 
     file.close()
 
@@ -102,7 +104,7 @@ def ParseGetMetaData(link):
 # param: pages_link -> url of post list page (a list) #
 #######################################################
 def GetPosts(pages_link):
-    with Pool(4) as p:
+    with Pool(cpu) as p:
         post_list = p.map(ParseGetMetaData, pages_link)
     
     all_post_list = list()
@@ -142,7 +144,7 @@ def GetArticles(post_list):
 
     all_post_content = list()
 
-    with Pool(4) as p:
+    with Pool(cpu) as p:
         contents = p.map(ParseGetArticle, post_link)
     
     for i in range(len(post_list)):
