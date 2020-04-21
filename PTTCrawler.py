@@ -10,11 +10,12 @@ from multiprocessing import Pool
 
 cpu = multiprocessing.cpu_count()
 
+
 ##########################################
 # get the html code with given url       #
 # param: url -> url of the web page      #
 ##########################################
-def GetPageContent(url):
+def get_page_content(url):
     res = requests.get(
         url=url,
         cookies={'over18': '1'}
@@ -23,12 +24,13 @@ def GetPageContent(url):
 
     return content
 
+
 #####################################################
 # get the page number of the board (e.g. Gossiping) #
 # param: BOARD_URL -> url of the board              #
 #####################################################
-def GetTotalPageNum(BOARD_URL):
-    soup = GetPageContent('https://www.ptt.cc' + BOARD_URL + 'index.html')
+def get_total_pagenum(BOARD_URL):
+    soup = get_page_content('https://www.ptt.cc' + BOARD_URL + 'index.html')
 
     next_page = soup.find('div', 'btn-group-paging').find_all('a', 'btn')
     next_link = next_page[1].get('href')
@@ -38,13 +40,14 @@ def GetTotalPageNum(BOARD_URL):
     
     return total_page
 
+
 #####################################################
 # get the list of all boards and save as a txt file #
 # param: url -> url of the board list page          #
 # see board_list.txt                                #
 #####################################################
-def GetBoardList(url):
-    content = GetPageContent(url)
+def get_board_list(url):
+    content = get_page_content(url)
     content = content.findAll('div', {'class':'board-name'})
 
     board_list = list()
@@ -59,11 +62,12 @@ def GetBoardList(url):
 
     return board_list
 
+
 ###############################################
 # read the list of all boards from a txt file #
 # see board_list.txt                          #
 ###############################################
-def ReadBoardList():
+def read_board_list():
     file = open('board_list.txt', 'r', encoding='utf-8')
 
     board_list = list()
@@ -74,13 +78,14 @@ def ReadBoardList():
 
     return board_list
 
+
 ######################################################
 # get the meta data of each post in a post list page #
 # param: link -> url of post list page               #
 ######################################################
-def ParseGetMetaData(link):
+def parse_metadata(link):
     url = 'https://www.ptt.cc' + link
-    soup = GetPageContent(url)
+    soup = get_page_content(url)
     
     articles = soup.find_all('div', 'r-ent')
     
@@ -99,13 +104,14 @@ def ParseGetMetaData(link):
     
     return posts
 
+
 #######################################################
 # get the meta data of all the posts                  #
 # param: pages_link -> url of post list page (a list) #
 #######################################################
-def GetPosts(pages_link):
+def get_posts(pages_link):
     with Pool(cpu) as p:
-        post_list = p.map(ParseGetMetaData, pages_link)
+        post_list = p.map(parse_metadata, pages_link)
     
     all_post_list = list()
     
@@ -115,12 +121,13 @@ def GetPosts(pages_link):
     
     return all_post_list
 
+
 ##################################
 # get the article of the post    #
 # param: link -> url of the post #
 ##################################
-def ParseGetArticle(link):
-    content = GetPageContent('https://www.ptt.cc' + link)
+def parse_article(link):
+    content = get_page_content('https://www.ptt.cc' + link)
     
     shift = content.findAll('div',['article-metaline', 'article-metaline-right', 'push'])
     if shift:
@@ -135,17 +142,18 @@ def ParseGetArticle(link):
     
     return content
 
+
 #########################################
 # get the articles of each post         #
 # param: post_link -> urls of all posts #
 #########################################
-def GetArticles(post_list):
+def get_articles(post_list):
     post_link = [entry['link'] for entry in post_list]
 
     all_post_content = list()
 
     with Pool(cpu) as p:
-        contents = p.map(ParseGetArticle, post_link)
+        contents = p.map(parse_article, post_link)
     
     for i in range(len(post_list)):
         all_post_content.append({
@@ -159,12 +167,13 @@ def GetArticles(post_list):
 
     return all_post_content
 
+
 ##########################################
 # save data into SQLite database         #
 # param: db_name -> name of the database #
 #        posts -> posts data             #
 ##########################################
-def Save2DB(db_name, posts):
+def save_to_db(db_name, posts):
     conn = sqlite3.connect(db_name)
     cur = conn.cursor()
     create_table = """ CREATE TABLE IF NOT EXISTS table1(
@@ -183,11 +192,12 @@ def Save2DB(db_name, posts):
     conn.commit()
     conn.close()
 
+
 ##############################
 # save data into excel       #
 # param: posts -> posts data #
 ##############################
-def Save2Excel(posts):
+def save_to_excel(posts):
     titles = [entry['title'] for entry in posts]
     links = [entry['link'] for entry in posts]
     dates = [entry['date'] for entry in posts]

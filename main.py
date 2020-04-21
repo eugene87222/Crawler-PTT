@@ -1,12 +1,13 @@
 import PTTCrawler
 import time
 
+
 def main():
     ans = input('Want to update board_list.txt? [yes/no]:')
     if ans.lower() == 'yes':
-        BOARD_LIST = PTTCrawler.GetBoardList('https://www.ptt.cc/bbs/hotboards.html')
+        BOARD_LIST = PTTCrawler.get_board_list('https://www.ptt.cc/bbs/hotboards.html')
     elif ans.lower() == 'no':
-        BOARD_LIST = PTTCrawler.ReadBoardList()
+        BOARD_LIST = PTTCrawler.read_board_list()
 
     BOARD = input('Which board would you want to crawl? (see board_list.txt):').lstrip().rstrip()
     BOARD_URL = '/bbs/' + BOARD + '/'
@@ -15,14 +16,14 @@ def main():
     if BOARD == '' or BOARD not in BOARD_LIST:
         print('EXIT')
     else:
-        total_page_num = PTTCrawler.GetTotalPageNum(BOARD_URL)
+        total_page_num = PTTCrawler.get_total_pagenum(BOARD_URL)
         print(u'Board <{}> has {} pages in total.'.format(BOARD, total_page_num))
 
         page_want_to_crawl = input(u'How many pages do you want to crawl? ')
 
         # if the input is valid (negative number, string, input nothing)
         if page_want_to_crawl == '' or not page_want_to_crawl.isdigit() or int(page_want_to_crawl) <= 0:
-            print('EXIT')
+            print(u'EXIT')
         else:
             page_want_to_crawl = min(int(page_want_to_crawl), total_page_num)
 
@@ -33,8 +34,8 @@ def main():
             
             start = time.time()
 
-            posts = PTTCrawler.GetPosts(pages_link)
-            posts_data = PTTCrawler.GetArticles(posts)
+            posts = PTTCrawler.get_posts(pages_link)
+            posts_data = PTTCrawler.get_articles(posts)
                 
             if len(posts) == len(posts_data):
                 print(u'Finish. {} pages\n{} posts in total'.format(page_want_to_crawl, len(posts)))
@@ -45,12 +46,13 @@ def main():
 
             ans = input('Save to database? [yes/no]:')
             if ans.lower() == 'yes':
-                PTTCrawler.Save2DB('data.db', posts_data)
+                PTTCrawler.save_to_db('data.db', posts_data)
             ans = input('Save to excel? [yes/no]:')
             if ans.lower() == 'yes':
-                PTTCrawler.Save2Excel(posts_data)
+                PTTCrawler.save_to_excel(posts_data)
             
     print('====================')
+
 
 if __name__ == '__main__':
     main()
